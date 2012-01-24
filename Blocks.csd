@@ -185,10 +185,10 @@ kreleasing release
 kmode getParameter isymbol, 0
 
 printf_i "turn on symbol %i mode %i\n", 1, isymbol, i(kmode)
-cggoto kmode== 0, mode1
-cggoto kmode== 1, mode2
-cggoto kmode== 2, mode3
-cggoto kmode== 3, mode4
+cggoto (kmode == 0), mode1
+cggoto (kmode == 1), mode2
+cggoto (kmode == 2), mode3
+cggoto (kmode == 3), mode4
 
 mode1:
 knote getParameter isymbol, 1
@@ -204,7 +204,7 @@ inum noteToMidi_i i(knote), i(kalt), i(koct)
 print inum, i(kveloc), i(kchan)
 noteon i(kchan), inum, i(kveloc)
 
-ckgoto kreleasing == 0, CCs ; always skip "off" section
+ckgoto (kreleasing == 0), CCs ; always skip "off" section
 reinit mode1rel
 igoto CCs
 mode1rel: ; note
@@ -223,7 +223,7 @@ ky getParameter isymbol,101
 kangle getParameter isymbol,102
 
 outic i(kchan), i(kctl), i(kmax), 0 , 127
-ckgoto kreleasing == 0, CCs ; always skip "off" section
+ckgoto (kreleasing == 0), CCs ; always skip "off" section
 reinit mode2rel
 igoto CCs
 mode2rel: ; note
@@ -274,8 +274,8 @@ kx getParameter isymbol,100
 ky getParameter isymbol,101
 kangle getParameter isymbol,102
 
-ckgoto kreleasing == 0, CCs ; always skip "off" section
-reinit mode3rel
+ckgoto (kreleasing == 0), CCs ; always skip "off" section
+;;reinit mode3rel
 igoto CCs
 mode3rel: ; note
 	printf_i "symbol off mode3: %i\n", 1, isymbol

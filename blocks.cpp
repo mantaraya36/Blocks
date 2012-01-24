@@ -9,6 +9,9 @@
 #include <QDoubleSpinBox>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QDir>
+#include <QProcess>
+#include <QTemporaryFile>
 
 
 Blocks::Blocks(QWidget *parent) :
@@ -16,6 +19,15 @@ Blocks::Blocks(QWidget *parent) :
     ui(new Ui::Blocks)
 {
 	ui->setupUi(this);
+
+	QTemporaryFile csdFile(QDir::tempPath () + QDir::separator() + "Blocks-XXXXXX.csd");
+	Q_ASSERT(csdFile.open());
+	QFile internalCsd(":/res/Blocks.csd");
+	Q_ASSERT(internalCsd.open(QIODevice::ReadOnly));
+	QByteArray data = internalCsd.readAll();
+	csdFile.write(data);
+	csdFile.flush();
+	internalCsd.close();
 	m_numFiducials = 12;
 	m_data = new CbData;
 	for (int i = 0; i < m_numFiducials; i++) {
@@ -23,26 +35,44 @@ Blocks::Blocks(QWidget *parent) :
 		connectTabActions(index);
 	}
 	m_propertiesList.resize(m_numFiducials);
+	csoundInitialize(NULL,NULL,NULL);
 	m_cs = new Csound();
 
 	QStringList items;
-	items << tr("0") << tr("1") << tr("2") << tr("3") << tr("4") << tr("5") << tr("6");
+	items << tr("0-") << tr("1-") << tr("2-") << tr("3-") << tr("4-") << tr("5-") << tr("6-");
 	bool ok;
 	QString text = QInputDialog::getItem(this, tr("Select MIDI interface"),
 										 tr("Select MIDI interface number"),
 										 items, 0, false, &ok);
 
-	char* argv[] = {"csound", "-Q9", "Blocks.csd"};
+	QStringList optionsList;
+	optionsList << "csound"<< csdFile.fileName() << "-Q" + text.left(text.indexOf('-'));
+	qDebug() << csdFile.fileName();
+	char* argv[32];
+	for (int i = 0; i < optionsList.size(); i++) {
+		argv[i] = (char *) calloc(optionsList.at(i).size() + 1, sizeof(char));
+		strcpy(argv[i], optionsList.at(i).toLocal8Bit().constData());
+	}
 	int result = m_cs->Compile(3,argv);
 	m_data->cs = m_cs;
-	csoundInitialize(NULL,NULL,NULL);
-	m_csThread = new CsoundPerformanceThread(m_cs);
-	m_csThread->SetProcessCallback(&Blocks::csCallback, m_data);
-	m_csThread->Play(); // Starts performance
+	if (result == 0) {
+		m_csThread = new CsoundPerformanceThread(m_cs);
+		m_csThread->SetProcessCallback(&Blocks::csCallback, m_data);
+		m_csThread->Play(); // Starts performance
+	} else {
+		QMessageBox::critical(this, tr("Error"), tr("Error running csd. Aborting"));
+		exit(-1);
+	}
 //	while(m_csThread->GetStatus() == 0) {
 //		qApp->processEvents();
 //	}
 	readSettings();
+	for (int i = 0; i < optionsList.size(); i++) {
+		free(argv[i]);
+	}
+#ifdef Q_OS_MACX
+	QProcess::startDetached("open", QStringList() << "/Applications/reacTIVision.app");
+#endif
 }
 
 Blocks::~Blocks()
@@ -50,6 +80,10 @@ Blocks::~Blocks()
 	m_csThread->Stop();
 	m_csThread->Join();
 	writeSettings();
+
+#ifdef Q_OS_MACX
+	QProcess::startDetached("killall", QStringList() << "/Applications/reacTIVision.app/Contents/MacOS/reacTIVision");
+#endif
 	delete ui;
 }
 

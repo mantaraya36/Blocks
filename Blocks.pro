@@ -11,11 +11,22 @@ TEMPLATE = app
 
 
 DEFINES += USE_DOUBLE
+unix {
+macx {
+INCLUDEPATH += "/usr/local/include/csound/"
+
+LIBS += -framework CsoundLib64
+LIBS += -L/Library/Frameworks/CsoundLib64.framework/Versions/Current/  -l_csnd
+
+} else {
 INCLUDEPATH += "/home/andres/src/csound5/H"
 INCLUDEPATH += "/home/andres/src/csound5/interfaces"
 
 LIBS += /home/andres/src/csound5/libcsound64.so
 LIBS += /home/andres/src/csound5/libcsnd.so
+}
+
+}
 
 SOURCES += main.cpp\
         blocks.cpp \
@@ -31,3 +42,6 @@ FORMS    += blocks.ui \
 
 OTHER_FILES += \
     Blocks.csd
+
+RESOURCES += \
+    res.qrc
