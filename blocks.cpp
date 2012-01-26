@@ -60,7 +60,7 @@ Blocks::Blocks(QWidget *parent) :
 		m_csThread->SetProcessCallback(&Blocks::csCallback, m_data);
 		m_csThread->Play(); // Starts performance
 	} else {
-		QMessageBox::critical(this, tr("Error"), tr("Error running csd. Aborting"));
+		QMessageBox::critical(this, tr("Error"), tr("Error running csd. Aborting.\nMake sure Blocks is not already running!"));
 		exit(-1);
 	}
 //	while(m_csThread->GetStatus() == 0) {
@@ -71,7 +71,7 @@ Blocks::Blocks(QWidget *parent) :
 		free(argv[i]);
 	}
 #ifdef Q_OS_MACX
-	QProcess::startDetached("open", QStringList() << "/Applications/reacTIVision.app");
+	QProcess::execute("open", QStringList() << "/Applications/reacTIVision.app");
 #endif
 }
 

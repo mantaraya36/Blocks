@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>628</width>
-    <height>450</height>
+    <width>704</width>
+    <height>461</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="modeTabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -236,6 +236,9 @@
             <property name="maximum">
              <number>127</number>
             </property>
+            <property name="value">
+             <number>7</number>
+            </property>
             <property name="num" stdset="0">
              <string>18</string>
             </property>
@@ -288,6 +291,9 @@
             </property>
             <property name="maximum">
              <number>256</number>
+            </property>
+            <property name="value">
+             <number>127</number>
             </property>
             <property name="num" stdset="0">
              <string>21</string>
@@ -447,6 +453,9 @@
             <property name="maximum">
              <number>8</number>
             </property>
+            <property name="value">
+             <number>4</number>
+            </property>
             <property name="num" stdset="0">
              <string>24</string>
             </property>
@@ -569,6 +578,9 @@
             <property name="maximum">
              <number>127</number>
             </property>
+            <property name="value">
+             <number>8</number>
+            </property>
             <property name="num" stdset="0">
              <string>31</string>
             </property>
@@ -591,6 +603,9 @@
             </property>
             <property name="maximum">
              <number>127</number>
+            </property>
+            <property name="value">
+             <number>120</number>
             </property>
             <property name="num" stdset="0">
              <string>28</string>
@@ -696,6 +711,9 @@
             </property>
             <property name="maximum">
              <number>127</number>
+            </property>
+            <property name="value">
+             <number>100</number>
             </property>
             <property name="num" stdset="0">
              <string>25</string>
@@ -910,6 +928,9 @@
             <property name="maximum">
              <number>127</number>
             </property>
+            <property name="value">
+             <number>24</number>
+            </property>
             <property name="num" stdset="0">
              <string>46</string>
             </property>
@@ -927,6 +948,9 @@
           </item>
           <item row="3" column="5">
            <widget class="QDoubleSpinBox" name="harpDurSpinBox">
+            <property name="value">
+             <double>0.500000000000000</double>
+            </property>
             <property name="num" stdset="0">
              <string>48</string>
             </property>
@@ -942,6 +966,9 @@
             </property>
             <property name="maximum">
              <number>8</number>
+            </property>
+            <property name="value">
+             <number>2</number>
             </property>
             <property name="num" stdset="0">
              <string>42</string>
@@ -1012,6 +1039,9 @@
             </property>
             <property name="maximum">
              <number>127</number>
+            </property>
+            <property name="value">
+             <number>100</number>
             </property>
             <property name="num" stdset="0">
              <string>43</string>
@@ -1112,7 +1142,7 @@
             <number>127</number>
            </property>
            <property name="value">
-            <number>10</number>
+            <number>0</number>
            </property>
            <property name="num" stdset="0">
             <string>14</string>
@@ -1163,7 +1193,7 @@
             <number>127</number>
            </property>
            <property name="value">
-            <number>74</number>
+            <number>0</number>
            </property>
            <property name="num" stdset="0">
             <string>10</string>
@@ -1296,7 +1326,7 @@
             <number>127</number>
            </property>
            <property name="value">
-            <number>7</number>
+            <number>0</number>
            </property>
            <property name="num" stdset="0">
             <string>6</string>
