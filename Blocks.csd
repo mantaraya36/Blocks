@@ -37,11 +37,13 @@ giminchrd ftgen 401,0,-3,-2,0,3,7
 gi7chrd ftgen 402,0,-4,-2, 0,4,7,10
 gim7chrd ftgen 403,0,-4,-2,0,3,7,10
 gimaj7chrd ftgen 404,0,-4,-2, 0,4,7,11
-gi5chrd ftgen 405,0,-2,-2, 0,5
+gi5chrd ftgen 405,0,-2,-2, 0,7
 gisus4chrd ftgen 406,0,-3,-2, 0,5,7
 
 gisymbolon ftgen 0, 0, 32, -2, 0
 
+giclass ftgen 0,0, 16, -2, 0,0,1,1,2,3,3,4,4,5,5,6
+gialt  ftgen 0,0, 16, -2, 0,1,0,1,0,0,1,0,1,0,1,0
 
 opcode noteToMidi, k, kkk
 ;; note 0-7 (diatonic), alt 0=natural, 1=sharp, 2=flat; oct C4=middle C
@@ -63,6 +65,13 @@ isemitones = isemitones + (ialt == 1? 1 : 0) + (ialt==2? -1 : 0)
 
 imidi = 60 + (12 *(ioct -4)) + isemitones
 xout imidi
+endop
+
+opcode semitoneToClass, kk, k
+ksemitone xin
+kclass table ksemitone, giclass
+kdev table ksemitone, gialt
+xout kclass, kdev
 endop
 
 opcode storeParameter, 0, ii
@@ -238,13 +247,15 @@ ky getParameter isymbol,101
 kangle getParameter isymbol,102
 
 print ichan, ictl, imax
-outic ichan, ictl, imax, 0 , 127
+outic ichan, ictl, imax, 0 , 127 ; This is not working here! why??
+event_i "i", 31, 0, 0.1, ichan, ictl, imax
 ckgoto (kreleasing == 0), CCs ; always skip "off" section
 reinit mode2rel
 igoto CCs
 mode2rel: ; note
 	printf_i "symbol off mode 2: %i -- %i %i %i\n", 1, isymbol,  ichan, ictl, imin
 	outic ichan, ictl, imin, 0 , 127
+	event_i "i", 31, 0, 0.1, ichan, ictl, imin
 	rireturn
 	goto CCs
 
@@ -278,26 +289,51 @@ endif
 
 calculate_arp_len:
 iftlen = ftlen(400+i(kchrdtype))
+if kstyle == 0 then
+	kindex = kcount
+	koct = koct + int(kindex/iftlen)
+elseif kstyle == 1 then
+	kindex = knumnotes - kcount
+	koct = koct + int(knumnotes/iftlen) - int(kcount/iftlen)
+elseif kstyle == 2 then
+	if kcount < int(knumnotes/2) then
+		kindex = kcount
+		koct = koct + int(kindex/iftlen)
+	else
+		kindex = knumnotes - kcount
+		koct = koct + int(knumnotes/iftlen)  - int(kcount/iftlen)
+	endif
+elseif kstyle == 3 then
+	kindex = kcount
+	koct = koct + int(kindex/iftlen)
+	if kcount < knumnotes then
+		knotetrig = 1 ; force triggering note
+	else 
+		knotetrig = 0 ; all notes have been triggered
+	endif
+endif
 
-kclass tablekt kcount%iftlen, 400+kchrdtype
-koct = koct + int(kcount/iftlen)
+kst tablekt kindex%iftlen, 400+kchrdtype
 
+kclass, kalt semitoneToClass kst
 knum noteToMidi kclass, kalt, koct
 schedkwhen knotetrig, 0, 32, 30, 0, 60/ktempo*ktempofactor, kchn, knum, kveloc
 if knotetrig == 1 then
 	kcount = kcount + 1
-	if kcount >= knumnotes then
-		kcount = 0
+	if (kcount >= knumnotes) then
+		if (kstyle != 3) then
+			kcount = 0
+		endif
 	endif
 endif
 
-ckgoto (kreleasing == 0), CCs ; always skip "off" section
+;ckgoto (kreleasing == 0), CCs ; always skip "off" section
 ;;reinit mode3rel
-igoto CCs
-mode3rel: ; note
-	printf_i "symbol off mode3: %i\n", 1, isymbol
-	rireturn
-	goto CCs
+;igoto CCs
+;mode3rel: ; note
+;	printf_i "symbol off mode3: %i\n", 1, isymbol
+;	rireturn
+;	goto CCs
 
 CCs:
 
@@ -377,7 +413,7 @@ ih = i(gkhold) + (imode == 2 ? 1 : 0) ;arpeggiator sticks longer
 iinstr = 20 + frac(p1)
 
 tablewkt 0, round(frac(p1) * 100), gisymbolon
-printf_i "turnoff note %f mode %f -- %i", 1, iinstr, imode, round(frac(p1) * 100)
+printf_i "turnoff note %f mode %f -- %i\n", 1, iinstr, imode, round(frac(p1) * 100)
 timout ih, 1, destroysymbol
 goto end
 destroysymbol:
@@ -394,6 +430,11 @@ ivel = p6
 idur = p3
 print inum
 noteondur ichn, inum, ivel, idur
+endin
+
+instr 31 ; ctlout
+print p4, p5, p6
+outic p4, p5, p6, 0, 127
 endin
 
 </CsInstruments>
@@ -419,13 +460,28 @@ i 10 0 36000
 </CsoundSynthesizer>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <bsbPanel>
  <label>Widgets</label>
  <objectName/>
- <x>72</x>
- <y>201</y>
- <width>400</width>
- <height>582</height>
+ <x>0</x>
+ <y>0</y>
+ <width>398</width>
+ <height>359</height>
  <visible>true</visible>
  <uuid/>
  <bgcolor mode="nobackground">
@@ -509,7 +565,7 @@ i 10 0 36000
     <stringvalue/>
    </bsbDropdownItem>
   </bsbDropdownItemList>
-  <selectedIndex>2</selectedIndex>
+  <selectedIndex>0</selectedIndex>
   <randomizable group="0">false</randomizable>
  </bsbObject>
  <bsbObject version="2" type="BSBDropdown">
@@ -565,7 +621,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>3.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
   <maximum>8.00000000</maximum>
@@ -602,7 +658,7 @@ i 10 0 36000
   <minimum>1</minimum>
   <maximum>16</maximum>
   <randomizable group="0">false</randomizable>
-  <value>1</value>
+  <value>3</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -685,7 +741,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>1.00000000</value>
+  <value>21.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>1.00000000</minimum>
   <maximum>127.00000000</maximum>
@@ -756,7 +812,7 @@ i 10 0 36000
     <stringvalue/>
    </bsbDropdownItem>
   </bsbDropdownItemList>
-  <selectedIndex>3</selectedIndex>
+  <selectedIndex>2</selectedIndex>
   <randomizable group="0">false</randomizable>
  </bsbObject>
  <bsbObject version="2" type="BSBScrollNumber">
@@ -997,7 +1053,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>127.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
   <maximum>127.00000000</maximum>
@@ -1613,10 +1669,10 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>27.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
-  <maximum>8.00000000</maximum>
+  <maximum>127.00000000</maximum>
   <bordermode>border</bordermode>
   <borderradius>1</borderradius>
   <borderwidth>1</borderwidth>
@@ -1737,7 +1793,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>2.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
   <maximum>8.00000000</maximum>
@@ -1828,7 +1884,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>1.00000000</value>
+  <value>94.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>1.00000000</minimum>
   <maximum>127.00000000</maximum>
@@ -1850,12 +1906,12 @@ i 10 0 36000
   <midicc>0</midicc>
   <bsbDropdownItemList>
    <bsbDropdownItem>
-    <name>minor</name>
+    <name>major</name>
     <value>0</value>
     <stringvalue/>
    </bsbDropdownItem>
    <bsbDropdownItem>
-    <name>major</name>
+    <name>minor</name>
     <value>1</value>
     <stringvalue/>
    </bsbDropdownItem>
@@ -1991,7 +2047,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>4.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
   <maximum>8.00000000</maximum>
@@ -2028,7 +2084,7 @@ i 10 0 36000
   <minimum>0</minimum>
   <maximum>16</maximum>
   <randomizable group="0">false</randomizable>
-  <value>0</value>
+  <value>1</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -2111,7 +2167,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>1.00000000</value>
+  <value>94.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>1.00000000</minimum>
   <maximum>127.00000000</maximum>
@@ -2212,7 +2268,7 @@ i 10 0 36000
   <minimum>1</minimum>
   <maximum>49</maximum>
   <randomizable group="0">false</randomizable>
-  <value>1</value>
+  <value>19</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -2270,7 +2326,7 @@ i 10 0 36000
   <minimum>0</minimum>
   <maximum>2</maximum>
   <randomizable group="0">false</randomizable>
-  <value>0</value>
+  <value>2</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -2404,7 +2460,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>0.00000000</value>
+  <value>4.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>0.00000000</minimum>
   <maximum>8.00000000</maximum>
@@ -2441,7 +2497,7 @@ i 10 0 36000
   <minimum>0</minimum>
   <maximum>16</maximum>
   <randomizable group="0">false</randomizable>
-  <value>0</value>
+  <value>1</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -2524,7 +2580,7 @@ i 10 0 36000
    <g>255</g>
    <b>255</b>
   </bgcolor>
-  <value>1.00000000</value>
+  <value>42.00000000</value>
   <resolution>1.00000000</resolution>
   <minimum>1.00000000</minimum>
   <maximum>127.00000000</maximum>
@@ -2619,7 +2675,7 @@ i 10 0 36000
   <minimum>40</minimum>
   <maximum>250</maximum>
   <randomizable group="0">false</randomizable>
-  <value>40</value>
+  <value>60</value>
  </bsbObject>
  <bsbObject version="2" type="BSBDropdown">
   <objectName>p0_29</objectName>
@@ -2698,7 +2754,7 @@ i 10 0 36000
     <stringvalue/>
    </bsbDropdownItem>
   </bsbDropdownItemList>
-  <selectedIndex>1</selectedIndex>
+  <selectedIndex>2</selectedIndex>
   <randomizable group="0">false</randomizable>
  </bsbObject>
  <bsbObject version="2" type="BSBSpinBox">
@@ -2728,7 +2784,7 @@ i 10 0 36000
   <minimum>1</minimum>
   <maximum>49</maximum>
   <randomizable group="0">false</randomizable>
-  <value>1</value>
+  <value>8</value>
  </bsbObject>
  <bsbObject version="2" type="BSBLabel">
   <objectName/>
@@ -2762,91 +2818,3 @@ i 10 0 36000
 </bsbPanel>
 <bsbPresets>
 </bsbPresets>
-<MacOptions>
-Version: 3
-Render: Real
-Ask: Yes
-Functions: ioObject
-Listing: Window
-WindowBounds: 72 179 400 200
-CurrentView: io
-IOViewEdit: On
-Options:
-</MacOptions>
-
-<MacGUI>
-ioView nobackground {59367, 11822, 65535}
-ioText {155, 13} {220, 81} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder X
-ioMenu {19, 40} {49, 28} 2 303 "C,D,E,F,G,A,B" p0_1
-ioMenu {75, 39} {58, 26} 0 303 "nat,sharp,flat" p0_2
-ioText {31, 94} {38, 18} scroll 0.000000 1.000000 "p0_3" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {82, 119} {39, 24} editnum 1.000000 1.000000 "p0_5" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 1.000000
-ioText {21, 68} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Octave
-ioText {75, 67} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Veloc
-ioText {78, 93} {44, 20} scroll 1.000000 1.000000 "p0_4" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {26, 117} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chan
-ioMenu {11, 10} {133, 22} 3 303 "note,control,arp,harp" p0_0
-ioText {169, 57} {38, 28} scroll 0.000000 1.000000 "p0_6" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {159, 31} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder CC Num
-ioText {213, 30} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chn
-ioText {216, 56} {44, 30} scroll 1.000000 1.000000 "p0_7" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {273, 57} {38, 28} scroll 0.000000 1.000000 "p0_8" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {264, 31} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Min
-ioText {318, 30} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Max
-ioText {321, 56} {44, 30} scroll 0.000000 1.000000 "p0_9" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {155, 98} {222, 78} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Y
-ioText {170, 140} {38, 28} scroll 0.000000 1.000000 "p0_10" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {160, 114} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder CC Num
-ioText {214, 113} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chn
-ioText {217, 138} {44, 30} scroll 1.000000 1.000000 "p0_11" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {275, 140} {38, 28} scroll 0.000000 1.000000 "p0_12" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {265, 114} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Min
-ioText {319, 113} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Max
-ioText {323, 139} {44, 30} scroll 0.000000 1.000000 "p0_13" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {154, 181} {222, 78} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Angle
-ioText {170, 225} {38, 28} scroll 0.000000 1.000000 "p0_14" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {160, 199} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder CC Num
-ioText {214, 198} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chn
-ioText {217, 224} {44, 30} scroll 1.000000 1.000000 "p0_15" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {274, 225} {38, 28} scroll 0.000000 1.000000 "p0_16" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {265, 199} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Min
-ioText {319, 198} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Max
-ioText {322, 224} {44, 30} scroll 0.000000 1.000000 "p0_17" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {13, 144} {123, 117} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Control Mode
-ioText {28, 185} {39, 20} scroll 0.000000 1.000000 "p0_18" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {21, 166} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder CC Num
-ioText {75, 165} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chn
-ioText {78, 181} {45, 22} scroll 1.000000 1.000000 "p0_19" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {31, 224} {39, 20} scroll 0.000000 1.000000 "p0_20" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {23, 202} {54, 23} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Min
-ioText {73, 200} {50, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Max
-ioText {79, 220} {45, 22} scroll 1.000000 1.000000 "p0_21" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioMenu {141, 342} {80, 30} 0 303 "minor,major,7,m7,maj7,5,sus4" p0_27
-ioMenu {12, 495} {49, 28} 0 303 "C,D,E,F,G,A,B" p0_40
-ioMenu {68, 494} {58, 26} 0 303 "nat,sharp,flat" p0_41
-ioText {21, 541} {38, 18} scroll 0.000000 1.000000 "p0_42" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {71, 558} {39, 24} editnum 0.000000 1.000000 "p0_44" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 0.000000
-ioText {14, 523} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Octave
-ioText {68, 522} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Veloc
-ioText {68, 540} {44, 20} scroll 1.000000 1.000000 "p0_43" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {15, 556} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chan
-ioMenu {150, 503} {80, 30} 2 303 "major,minor,pentatonic,dblharm" p0_45
-ioText {193, 552} {39, 24} editnum 1.000000 1.000000 "p0_46" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 1.000000
-ioText {240, 555} {41, 21} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Dur
-ioText {280, 553} {56, 24} editnum 0.000000 0.050000 "p0_48" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 0.000000
-ioText {127, 552} {67, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Num notes
-ioMenu {13, 344} {49, 28} 0 303 "C,D,E,F,G,A,B" p0_22
-ioMenu {69, 343} {58, 26} 0 303 "nat,sharp,flat" p0_23
-ioText {22, 390} {38, 18} scroll 0.000000 1.000000 "p0_24" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {72, 407} {39, 24} editnum 0.000000 1.000000 "p0_26" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 0.000000
-ioText {15, 372} {53, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Octave
-ioText {69, 371} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Veloc
-ioText {69, 389} {44, 20} scroll 1.000000 1.000000 "p0_25" left "Arial" 10 {0, 0, 0} {65280, 65280, 65280} background noborder 
-ioText {16, 405} {49, 25} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Chan
-ioText {137, 381} {48, 21} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Tempo
-ioText {181, 379} {56, 24} editnum 40.000000 0.100000 "p0_28" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 40.000000
-ioMenu {145, 407} {80, 27} 3 303 "4,2,1,1/2,1/3,1/4" p0_29
-ioMenu {254, 342} {80, 27} 1 303 "up,down,up-down,chord" p0_30
-ioText {304, 410} {39, 24} editnum 1.000000 1.000000 "p0_31" left "" 0 {0, 0, 0} {59392, 59392, 59392} nobackground noborder 1.000000
-ioText {238, 410} {67, 24} label 0.000000 0.00100 "" left "Arial" 10 {0, 0, 0} {59392, 59392, 59392} nobackground noborder Num notes
-</MacGUI>
