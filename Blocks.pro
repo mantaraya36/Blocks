@@ -6,18 +6,18 @@
 
 QT       += core gui
 
-TARGET = Blocks
+TARGET = AmoebaBlocks
 TEMPLATE = app
 
 
 DEFINES += USE_DOUBLE
 unix {
 macx {
-INCLUDEPATH += "/usr/local/include/csound/"
+INCLUDEPATH += /Library/Frameworks/CsoundLib64.framework/Headers
 
 LIBS += -framework CsoundLib64
 LIBS += -L/Library/Frameworks/CsoundLib64.framework/Versions/Current/  -l_csnd
-
+ICON = amoeba.icns
 } else {
 INCLUDEPATH += "/home/andres/src/csound5/H"
 INCLUDEPATH += "/home/andres/src/csound5/interfaces"
@@ -41,6 +41,7 @@ FORMS    += blocks.ui \
     fiducialproperties.ui
 
 OTHER_FILES += \
+    Blocks.csd \
     Blocks.csd
 
 RESOURCES += \

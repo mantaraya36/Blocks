@@ -518,6 +518,9 @@
           </item>
           <item row="3" column="5">
            <widget class="QComboBox" name="arpSubDivComboBox">
+            <property name="currentIndex">
+             <number>3</number>
+            </property>
             <property name="num" stdset="0">
              <string>29</string>
             </property>
@@ -891,7 +894,7 @@
           <item row="3" column="1">
            <widget class="QComboBox" name="harpScaleComboBox">
             <property name="num" stdset="0">
-             <string>45</string>
+             <string>47</string>
             </property>
             <property name="type" stdset="0">
              <string>combo</string>
@@ -904,6 +907,11 @@
             <item>
              <property name="text">
               <string>Minor</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Pentatonic</string>
              </property>
             </item>
             <item>
@@ -1161,7 +1169,7 @@
             <number>16</number>
            </property>
            <property name="num" stdset="0">
-            <string>11</string>
+            <string>15</string>
            </property>
            <property name="type" stdset="0">
             <string>int</string>

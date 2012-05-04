@@ -341,6 +341,8 @@ kxcc getParameter isymbol, 6
 kxchan getParameter isymbol, 7
 kxmin getParameter isymbol, 8
 kxmax getParameter isymbol, 9
+printk2 kxcc
+printk2 kxchan
 if kxcc != 0 then 
 	outkc kxchan, kxcc, 1-kx, kxmin/127, kxmax/127
 endif
@@ -349,7 +351,7 @@ kycc getParameter isymbol, 10
 kychan getParameter isymbol, 11
 kymin getParameter isymbol, 12
 kymax getParameter isymbol, 13
-if kxcc != 0 then 
+if kycc != 0 then
 	outkc kychan, kycc, 1-ky, kymin/127, kymax/127
 endif
 
@@ -357,7 +359,7 @@ kacc getParameter isymbol, 14
 kachan getParameter isymbol, 15
 kamin getParameter isymbol, 16
 kamax getParameter isymbol, 17
-if kxcc != 0 then 
+if kacc != 0 then
 	outkc kachan, kacc, kangle/(2*$M_PI), kamin/127, kamax/127
 endif
 

@@ -21,9 +21,11 @@ Blocks::Blocks(QWidget *parent) :
 	ui->setupUi(this);
 
 	QTemporaryFile csdFile(QDir::tempPath () + QDir::separator() + "Blocks-XXXXXX.csd");
-	Q_ASSERT(csdFile.open());
+	bool op = csdFile.open();
+	Q_ASSERT(op);
 	QFile internalCsd(":/res/Blocks.csd");
-	Q_ASSERT(internalCsd.open(QIODevice::ReadOnly));
+	op = internalCsd.open(QIODevice::ReadOnly);
+	Q_ASSERT(op);
 	QByteArray data = internalCsd.readAll();
 	csdFile.write(data);
 	csdFile.flush();
@@ -151,6 +153,15 @@ void Blocks::connectChildren(QObject *child, int index)
 	if (prop.isValid()) {
 		const QMetaObject * mo = child->metaObject();
 		const char * cname = mo->className();
+		if (child->property("num").toInt() == 5
+		        || child->property("num").toInt() == 19
+		        || child->property("num").toInt() == 26
+		        || child->property("num").toInt() == 45
+		        || child->property("num").toInt() == 7
+		        || child->property("num").toInt() == 11
+		        || child->property("num").toInt() == 15) { // Channel
+			static_cast<QSpinBox *>(child)->setValue(index + 1);
+		}
 		if (!strncmp(cname,"QComboBox", strlen(cname))) {
 			connect(static_cast<QComboBox *>(child), SIGNAL(currentIndexChanged(int)),
 					this, SLOT(intValueChanged(int)));
